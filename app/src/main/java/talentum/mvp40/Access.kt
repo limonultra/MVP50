@@ -15,6 +15,7 @@ import android.view.View
 import talentum.mvp40.ConnectivityReceiver
 import android.view.inputmethod.InputMethodManager
 import kotlinx.android.synthetic.main.activity_access.*
+import kotlinx.android.synthetic.main.activity_transcription.*
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.drafts.Draft
 import org.java_websocket.drafts.Draft_6455
