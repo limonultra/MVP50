@@ -1,18 +1,20 @@
 package talentum.mvp40
 
+import android.app.Dialog
 import android.content.Context
 import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.os.Bundle
+import android.support.v4.app.DialogFragment
+import android.support.v4.app.FragmentTransaction
 import android.support.v4.app.NavUtils
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.MenuItem
-import android.view.View
-import talentum.mvp40.ConnectivityReceiver
+import android.view.*
+import android.view.Menu
 import android.view.inputmethod.InputMethodManager
 import kotlinx.android.synthetic.main.activity_access.*
 import kotlinx.android.synthetic.main.activity_transcription.*
@@ -142,15 +144,18 @@ class Access : AppCompatActivity(),ConnectivityReceiver.ConnectivityReceiverList
 
     inner class ChatClient(url: URI, draft: Draft, httpHeaders: Map<String, String>, Timeout: Int) : WebSocketClient(url, draft, httpHeaders, Timeout) {
 
+        val subFragment = SubsFragment()
+
         fun setURI(urin: URI) {
             this.uri = urin
         }
 
         override fun onOpen(handshakedata: ServerHandshake?) {
             runOnUiThread {
-                setContentView(R.layout.activity_transcription)
-                setTitle("Transcripcion")
-                supportActionBar?.setDisplayHomeAsUpEnabled(false)
+                val fragmentManager = getSupportFragmentManager()
+                val transaction = fragmentManager.beginTransaction()
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                transaction.add(android.R.id.content, subFragment).commit()
             }
             open = true
             Log.e("Open: ", "new connection opened")
@@ -159,7 +164,7 @@ class Access : AppCompatActivity(),ConnectivityReceiver.ConnectivityReceiverList
 
         override fun onMessage(message: String) {
             runOnUiThread {
-                profText.text = "$newtext $message"
+                subFragment.escribirSubs(message, newtext)
                 oldtext = "$newtext $message"
             }
             Log.e("---------- Mensaje:", message)
@@ -179,6 +184,7 @@ class Access : AppCompatActivity(),ConnectivityReceiver.ConnectivityReceiverList
 
                 }
             } else if (Arrays.toString(message.array()) == "[1, 1, 0, 0]") {
+                //todo check when text ends and update in the dialog
                 newtext = oldtext
             }
 
@@ -200,5 +206,45 @@ class Access : AppCompatActivity(),ConnectivityReceiver.ConnectivityReceiverList
         }
 
 
+    }
+
+    class SubsFragment : DialogFragment() {
+        private var rootView: View? = null
+
+
+        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+
+            rootView = inflater.inflate(R.layout.activity_transcription, container, false)
+            return rootView
+        }
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+//dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            return super.onCreateDialog(savedInstanceState)
+        }
+
+        override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
+            menu!!.clear()
+        }
+
+        override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+            val id = item!!.itemId
+
+            if (id == android.R.id.home) {
+                // handle close button click here
+                dismiss()
+                return true
+            }
+            return super.onOptionsItemSelected(item)
+        }
+
+        fun escribirSubs(message: String, newtext: String){
+            profText.text = "$newtext $message"
+        }
+
+        companion object {
+
+            private val TAG = "Access"
+        }
     }
 }
